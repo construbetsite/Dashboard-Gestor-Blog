@@ -1,0 +1,288 @@
+/* ============================================
+   1. RESET E CONFIGURAÇÕES GLOBAIS
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* Remove fundo cinza ao tocar em links/botões no mobile */
+}
+
+html {
+  -webkit-text-size-adjust: 100%;     /* Impede zoom forçado em inputs no iOS */
+  text-size-adjust: 100%;
+  font-size: 16px;                    /* Base para rem, evita zoom automático */
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;                 /* Elimina scroll horizontal indesejado */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f9fafb;         /* gray-50 do Tailwind */
+  color: #111827;                     /* gray-900 */
+}
+
+/* ============================================
+   2. PREVENÇÃO DE ZOOM EM MOBILE
+   ============================================ */
+/* Evita que o Chrome Android aumente fontes em orientação paisagem */
+@media screen and (max-width: 768px) {
+  input, textarea, select, button {
+    font-size: 16px;                  /* iOS não aplica zoom se font-size >= 16px */
+  }
+}
+
+/* Impede que o Safari iOS aumente textos longos */
+.no-font-boost {
+  max-height: 1000000px;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+/* Força consistência em inputs */
+input, button, textarea, select {
+  font-size: inherit;
+}
+
+/* ============================================
+   3. ESTILOS BASE DA ROOT (SEM LARGURA FIXA)
+   ============================================ */
+#root {
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   4. ANIMAÇÕES GLOBAIS
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.1s ease-in-out;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.float {
+  animation: float 1s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3.5s ease-in-out infinite;
+}
+
+/* ============================================
+   5. UTILITÁRIOS DE RESPONSIVIDADE (alternativas ao Tailwind)
+   ============================================ */
+.container-responsive {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Breakpoints comuns */
+@media (min-width: 640px) {
+  .container-responsive {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Esconde scrollbar (útil para carrosséis) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================
+   6. FLYERS CAROUSEL (ESCOPO #flyers)
+   ============================================ */
+#flyers {
+  width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+#flyers .flyer-card {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  width: 85vw;          /* padrão mobile */
+  max-width: 320px;
+  border-radius: 1.5rem;
+  transition: transform 0.2s ease;
+}
+
+/* Ajuste do card para tablet/desktop */
+@media (min-width: 640px) {
+  #flyers .flyer-card {
+    width: 70vw;
+    max-width: 380px;
+  }
+}
+
+@media (min-width: 1024px) {
+  #flyers .flyer-card {
+    width: 28rem;
+    max-width: 32rem;
+  }
+}
+
+/* Botões de navegação do flyer */
+#flyers .flyer-nav-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+#flyers .flyer-nav-btn svg {
+  color: #d4af37;
+  width: 24px;
+  height: 24px;
+}
+
+/* Hover apenas em dispositivos com mouse */
+@media (hover: hover) {
+  #flyers .flyer-nav-btn:hover {
+    transform: scale(1.08);
+    background: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Feedback toque no mobile */
+#flyers .flyer-nav-btn:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   7. AJUSTES RESPONSIVOS GLOBAIS
+   ============================================ */
+/* Telas muito pequenas (até 480px) */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px; /* reduz ligeiramente a base, mas mantém legível */
+  }
+  h1 {
+    font-size: 1.8rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+  .flyer-card {
+    padding: 1rem;
+  }
+}
+
+/* Tablets (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .container-responsive {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+/* Desktop pequeno (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container-responsive {
+    max-width: 960px;
+  }
+}
+
+/* Desktop grande (acima de 1024px) */
+@media (min-width: 1025px) {
+  .container-responsive {
+    max-width: 1280px;
+  }
+}
+
+/* Evita overflow de imagens e vídeos */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Ajusta botões para toque fácil em mobile */
+button,
+a.button-like,
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Estilo para links sem underline indesejado */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ============================================
+   8. EXEMPLO DE CLASSE PARA CONTAINER CENTRALIZADO
+   (Se não quiser usar Tailwind)
+   ============================================ */
+.main-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .main-container {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .main-container {
+    padding: 0 32px;
+  }
+}
