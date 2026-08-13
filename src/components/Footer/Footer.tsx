@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
     <footer className="bg-white border-t border-gray-200 text-gray-800 pt-16 pb-10">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
 
-        {/* LOGO + DESCRIÇÃO */}
+
         <div>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex items-center gap-2">

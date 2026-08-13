@@ -9,6 +9,7 @@ interface PostFormProps {
   post?: BlogPost | null;
 }
 
+
 interface Categoria {
   id: string;
   nome: string;
