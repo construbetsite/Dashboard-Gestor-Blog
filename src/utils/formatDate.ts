@@ -14,6 +14,7 @@ export function formatDate(value?: string | Date | null): string {
   return `${day}/${month}/${year}`;
 }
 
+
 /**
  * Formata data + hora (padrão brasileiro).
  * Ex.: "05/01/2025 14:30"

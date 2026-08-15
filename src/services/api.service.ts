@@ -110,6 +110,7 @@ export const api = {
       headers,
     });
     
+    
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: `Erro ${response.status}` }));
       throw new Error(error.message || error.error || `Erro ${response.status}`);

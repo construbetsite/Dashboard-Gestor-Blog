@@ -7,6 +7,7 @@ interface PostCardProps {
   post: BlogPost;
 }
 
+
 export default function PostCard({ post }: PostCardProps) {
   return (
     <div className="group relative rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md">
@@ -15,6 +16,7 @@ export default function PostCard({ post }: PostCardProps) {
           {post.image_url && (
             <div className="h-24 w-32 flex-shrink-0 overflow-hidden rounded-lg">
               <img
+              
                 src={getImageUrl(post.image_url)}
                 alt={post.title}
                 className="h-full w-full object-cover"
