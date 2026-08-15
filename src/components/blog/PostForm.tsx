@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { blogService } from "../../services/blog.service";
+import { blogService, isValidUUID } from "../../services/blog.service";
 import type { BlogPost } from "../../types/blog";
-import { Loader2 } from "lucide-react";
+import { Loader2, ImageIcon, Trash2, UploadCloud } from "lucide-react";
+import { getImageUrl } from "../../utils/imageUrl";
+import { validateImageFile, formatUploadError } from "../../utils/imageValidation";
 
 interface PostFormProps {
   mode: "create" | "edit";
   post?: BlogPost | null;
 }
-
 
 interface Categoria {
   id: string;
@@ -18,54 +19,78 @@ interface Categoria {
 export default function PostForm({ mode, post }: PostFormProps) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriasLoading, setCategoriasLoading] = useState(true);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
-  // ✅ Estado do formulário
+  const resolvePreviewUrl = (value?: string) => {
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("data:image/") || trimmed.startsWith("blob:")) {
+      return trimmed;
+    }
+    return getImageUrl(trimmed);
+  };
+
+  // ✅ Estado do formulário (camelCase conforme contrato de API)
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
     description: "",
     content: "",
-    image: "",
-    category: "",
-    reading_time: "5 min",
+    imageUrl: "",
+    categoriaId: "",      // UUID (obrigatório)
+    category: "",         // Nome legível (obrigatório) ← NOVO
+    readingTime: "5 min",
     type: "article",
     featured: false,
+    status: true,
     video1: "",
     video2: "",
     author: "",
-    author_image: "",
+    authorImage: "",
     tags: "",
-    published_at: "",
+    publishedAt: "",
   });
 
   // ✅ Atualizar formData quando post mudar
   useEffect(() => {
     if (post) {
       console.log("📝 [PostForm] Carregando post para edição:", post);
-      
+      const postImage = post.image_url || "";
+
       setFormData({
         title: post.title || "",
         slug: post.slug || "",
         description: post.description || "",
         content: post.content || "",
-        image: post.image || "",
-        category: post.category || "",
-        reading_time: post.reading_time || "5 min",
+        imageUrl: postImage,
+        categoriaId: post.categoria_id || "",
+        category: post.category || "",        // ← Nome da categoria
+        readingTime: post.reading_time || "5 min",
         type: post.type || "article",
         featured: post.featured || false,
+        status: post.status ?? true,
         video1: post.video1 || "",
         video2: post.video2 || "",
         author: post.author || "",
-        author_image: post.author_image || "",
+        authorImage: post.author_image || "",
         tags: post.tags?.join(", ") || "",
-        published_at: post.published_at
+        publishedAt: post.published_at
           ? new Date(post.published_at).toISOString().slice(0, 16)
           : "",
       });
+      setImagePreview(resolvePreviewUrl(postImage));
+      setSelectedImageFile(null);
+    } else {
+      setFormData((prev) => ({ ...prev, imageUrl: "" }));
+      setImagePreview("");
+      setSelectedImageFile(null);
     }
   }, [post]);
 
@@ -97,68 +122,215 @@ export default function PostForm({ mode, post }: PostFormProps) {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
+    if (name === "imageUrl") {
+      const nextValue = value;
+      setFormData((prev) => ({
+        ...prev,
+        imageUrl: nextValue,
+      }));
+      setSelectedImageFile(null);
+      setImagePreview(nextValue.trim() ? resolvePreviewUrl(nextValue) : "");
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  // ✅ Handler para mudança de categoria
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || "Erro ao validar imagem");
+      console.warn("⚠️ [PostForm] Validação de imagem falhou:", validation.error);
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const previewUrl = typeof reader.result === "string" ? reader.result : "";
+      setSelectedImageFile(file);
+      setImagePreview(previewUrl);
+      setFormData((prev) => ({ ...prev, imageUrl: "" }));
+      setError(null);
+      console.log("✅ [PostForm] Imagem selecionada:", {
+        name: file.name,
+        size: `${(file.size / 1024).toFixed(2)}KB`,
+        type: file.type,
+      });
+    };
+
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const clearSelectedImage = () => {
+    setSelectedImageFile(null);
+    setImagePreview(formData.imageUrl ? resolvePreviewUrl(formData.imageUrl) : "");
+    setFormData((prev) => ({ ...prev, imageUrl: prev.imageUrl || "" }));
+  };
+
+  // ✅ Handler para mudança de categoria (armazena AMBOS UUID e nome)
   const handleCategoriaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedNome = e.target.value;
-    
-    console.log(`🔄 [PostForm] Categoria selecionada: "${selectedNome}"`);
+    const selectedId = e.target.value;
+    const selectedCategory = categorias.find((cat) => cat.id === selectedId);
+
+    console.log(`🔄 [PostForm] Categoria selecionada:`, {
+      id: selectedId,
+      nome: selectedCategory?.nome,
+    });
 
     setFormData((prev) => ({
       ...prev,
-      category: selectedNome,
+      categoriaId: selectedId,                // UUID
+      category: selectedCategory?.nome || "", // Nome legível
     }));
   };
 
-  // ✅ Enviar formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setUploadingImage(false);
     setError(null);
     setSuccess(false);
 
     try {
-      // ✅ Encontrar a categoria selecionada pelo nome
-      const selectedCategoria = categorias.find(
-        (c) => c.nome === formData.category
-      );
+      let imageUrl = formData.imageUrl || null;
+      let imagePath: string | null = null;
+      let imageFilename: string | null = null;
+      let imageSize: number | null = null;
+      let imageMimeType: string | null = null;
 
-      // ✅ Preparar dados para enviar - DEFINIR TODAS AS PROPRIEDADES DE UMA VEZ
+      // ✅ ETAPA 1: Upload da imagem (se houver)
+      if (selectedImageFile) {
+        setUploadingImage(true);
+        console.log("📤 [PostForm] Fazendo upload do arquivo...", {
+          name: selectedImageFile.name,
+          size: selectedImageFile.size,
+          type: selectedImageFile.type,
+        });
+
+        const uploadFormData = new FormData();
+        uploadFormData.append("image", selectedImageFile);
+
+        try {
+          const uploadResponse = await blogService.uploadImage(uploadFormData);
+
+          if (uploadResponse.success) {
+            imageUrl = uploadResponse.data.url;
+            imagePath = uploadResponse.data.path;
+            imageFilename = selectedImageFile.name;
+            imageSize = selectedImageFile.size;
+            imageMimeType = selectedImageFile.type;
+            console.log("✅ [PostForm] Upload concluído:", { imageUrl, imagePath });
+          } else {
+            throw new Error(uploadResponse.message || "Falha no upload da imagem");
+          }
+        } catch (uploadError: any) {
+          console.error("❌ [PostForm] Erro no upload:", uploadError);
+
+          let errorMessage = "Erro ao fazer upload da imagem";
+          if (uploadError.response?.status === 413) {
+            errorMessage = formatUploadError(413);
+          } else if (uploadError.response?.status === 415) {
+            errorMessage = formatUploadError(415);
+          } else if (uploadError.response?.status === 401) {
+            errorMessage = formatUploadError(401);
+          } else if (uploadError.response?.status === 403) {
+            errorMessage = formatUploadError(403);
+          } else if (uploadError.message) {
+            errorMessage = uploadError.message;
+          }
+
+          setError(errorMessage);
+          setIsSubmitting(false);
+          setUploadingImage(false);
+          return;
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+
+      // ✅ ETAPA 2: Validar categoria (obrigatório)
+      if (!formData.categoriaId || !formData.category) {
+        setError("Selecione uma categoria válida (UUID e nome são obrigatórios)");
+        setIsSubmitting(false);
+        console.error("❌ [PostForm] Categoria incompleta:", {
+          categoriaId: formData.categoriaId,
+          category: formData.category,
+        });
+        return;
+      }
+
+      if (!isValidUUID(formData.categoriaId)) {
+        setError("Categoria selecionada é inválida. Selecione uma categoria válida.");
+        setIsSubmitting(false);
+        console.error("❌ [PostForm] UUID de categoria inválido:", formData.categoriaId);
+        return;
+      }
+
+      // ✅ ETAPA 3: Montar o payload em camelCase (conforme contrato de API)
       const dataToSend: any = {
         title: formData.title,
         description: formData.description,
-        content: formData.content,
-        image: formData.image || undefined,
-        category: formData.category || undefined,
-        categoria_id: selectedCategoria?.id || null,
-        reading_time: formData.reading_time || "5 min",
-        type: formData.type || "article",
-        featured: formData.featured || false,
-        video1: formData.video1 || undefined,
-        video2: formData.video2 || undefined,
-        author: formData.author || undefined,
-        author_image: formData.author_image || undefined,
-        tags: formData.tags
-          ? formData.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
-          : [],
-        published_at: formData.published_at || null,
+        categoriaId: formData.categoriaId,   // ← UUID (obrigatório)
+        category: formData.category,         // ← Nome legível (obrigatório)
       };
 
-      // ✅ Adicionar slug se existir (criação ou edição)
-      if (formData.slug) {
-        dataToSend.slug = formData.slug;
+      // Adicionar campos opcionais apenas se tiverem valor
+      if (formData.content) dataToSend.content = formData.content;
+      if (formData.slug) dataToSend.slug = formData.slug;
+      if (formData.readingTime) dataToSend.readingTime = formData.readingTime;
+      if (formData.type) dataToSend.type = formData.type;
+      if (formData.featured !== undefined) dataToSend.featured = formData.featured;
+      if (formData.status !== undefined) dataToSend.status = formData.status;
+      if (formData.video1) dataToSend.video1 = formData.video1;
+      if (formData.video2) dataToSend.video2 = formData.video2;
+      if (formData.author) dataToSend.author = formData.author;
+      if (formData.authorImage) dataToSend.authorImage = formData.authorImage;
+      if (formData.publishedAt) dataToSend.publishedAt = formData.publishedAt;
+
+      // Tags
+      if (formData.tags) {
+        const parsedTags = formData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+        if (parsedTags.length > 0) dataToSend.tags = parsedTags;
       }
 
-      console.log("📤 [PostForm] Enviando dados:", JSON.stringify(dataToSend, null, 2));
+      // Dados de imagem (vindo do upload)
+      if (imageUrl) {
+        dataToSend.imageUrl = imageUrl;
+        console.log("✅ [PostForm] imageUrl adicionado ao payload:", imageUrl);
+      }
+      if (imagePath) dataToSend.imagePath = imagePath;
+      if (imageFilename) dataToSend.imageFilename = imageFilename;
+      if (imageSize) dataToSend.imageSize = imageSize;
+      if (imageMimeType) dataToSend.imageMimeType = imageMimeType;
 
+      // ✅ ETAPA 4: Log de depuração (verificar camelCase)
+      console.log("📤 [PostForm] Payload (camelCase):", JSON.stringify(dataToSend, null, 2));
+      console.log("📤 [PostForm] Verificação de campos:", {
+        temTitle: !!dataToSend.title,
+        temDescription: !!dataToSend.description,
+        temCategoriaId: !!dataToSend.categoriaId,
+        temCategory: !!dataToSend.category,
+        temImageUrl: !!dataToSend.imageUrl,
+        contemCampoImage: 'image' in dataToSend ? "❌ ERRO: campo 'image' presente!" : "✅ OK",
+      });
+
+      // ✅ ETAPA 5: Submeter o post
       if (mode === "edit" && post?.id) {
+        console.log(`📝 [PostForm] Editando post: ${post.id}`);
         await blogService.editar(post.id, dataToSend);
       } else {
+        console.log("📝 [PostForm] Criando novo post");
         await blogService.criar(dataToSend);
       }
 
@@ -166,9 +338,31 @@ export default function PostForm({ mode, post }: PostFormProps) {
       setTimeout(() => {
         navigate("/admin/posts");
       }, 1500);
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ [PostForm] Erro ao salvar post:", err);
-      setError(err instanceof Error ? err.message : "Erro ao salvar post");
+
+      let errorMessage = "Erro ao salvar post";
+
+      if (err.message) {
+        errorMessage = err.message;
+      } else if (err.response?.status === 400) {
+        const errorData = err.response?.data;
+        if (errorData?.errors && Array.isArray(errorData.errors)) {
+          errorMessage = errorData.errors.join(". ");
+        } else if (errorData?.message) {
+          errorMessage = errorData.message;
+        } else {
+          errorMessage = "Dados inválidos. Verifique o formulário.";
+        }
+      } else if (err.response?.status === 401) {
+        errorMessage = "Você não está autenticado. Faça login novamente.";
+      } else if (err.response?.status === 403) {
+        errorMessage = "Você não tem permissão para realizar esta ação.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Erro no servidor. Tente novamente mais tarde.";
+      }
+
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -224,13 +418,14 @@ export default function PostForm({ mode, post }: PostFormProps) {
       {/* Descrição */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Descrição
+          Descrição *
         </label>
         <textarea
           name="description"
           value={formData.description}
           onChange={handleChange}
           rows={3}
+          required
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
@@ -238,33 +433,32 @@ export default function PostForm({ mode, post }: PostFormProps) {
       {/* Conteúdo */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Conteúdo *
+          Conteúdo
         </label>
         <textarea
           name="content"
           value={formData.content}
           onChange={handleChange}
           rows={10}
-          required
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
         />
       </div>
 
-      {/* ✅ SELEÇÃO DE CATEGORIA */}
+      {/* ✅ SELEÇÃO DE CATEGORIA (UUID) */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Categoria
+          Categoria *
         </label>
         <select
-          name="category"
-          value={formData.category || ""}
+          name="categoriaId"
+          value={formData.categoriaId || ""}
           onChange={handleCategoriaChange}
           disabled={categoriasLoading}
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
         >
           <option value="">Selecione uma categoria</option>
           {categorias.map((cat) => (
-            <option key={cat.id} value={cat.nome}>
+            <option key={cat.id} value={cat.id}>
               {cat.nome}
             </option>
           ))}
@@ -275,26 +469,122 @@ export default function PostForm({ mode, post }: PostFormProps) {
             Carregando categorias...
           </p>
         )}
-        {formData.category && (
+        {formData.categoriaId && formData.category && (
           <p className="text-xs text-emerald-600 mt-1">
             ✅ Categoria selecionada: <strong>{formData.category}</strong>
           </p>
         )}
       </div>
 
+      {/* Status */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Status
+        </label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setFormData((prev) => ({ ...prev, status: true }))}
+            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
+              formData.status
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+            }`}
+          >
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            Ativo
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData((prev) => ({ ...prev, status: false }))}
+            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
+              !formData.status
+                ? "border-rose-500 bg-rose-50 text-rose-700"
+                : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+            }`}
+          >
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+            Inativo
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          Posts ativos aparecem no blog. Inativos ficam ocultos da publicação.
+        </p>
+      </div>
+
       {/* Imagem */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          URL da Imagem
+          Imagem do Post
         </label>
-        <input
-          type="text"
-          name="image"
-          value={formData.image}
-          onChange={handleChange}
-          placeholder="https://exemplo.com/imagem.jpg"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+
+        <div className="mb-3 overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
+          {uploadingImage ? (
+            <div className="flex h-56 w-full flex-col items-center justify-center gap-3 text-slate-500">
+              <Loader2 size={32} className="animate-spin text-blue-500" />
+              <span className="text-sm font-medium">Enviando imagem...</span>
+            </div>
+          ) : imagePreview ? (
+            <img
+              src={imagePreview}
+              alt="Preview da imagem"
+              className="h-56 w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-56 w-full items-center justify-center text-slate-500">
+              <div className="flex flex-col items-center gap-2">
+                <ImageIcon size={32} className="text-slate-400" />
+                <span className="text-sm">Nenhuma imagem selecionada</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-slate-500 mb-1">
+              URL da imagem
+            </label>
+            <input
+              type="url"
+              name="imageUrl"
+              value={formData.imageUrl}
+              onChange={handleChange}
+              placeholder="https://exemplo.com/imagem.jpg"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100">
+              <UploadCloud size={16} />
+              Upload de imagem
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </label>
+
+            {(imagePreview || formData.imageUrl) && (
+              <button
+                type="button"
+                onClick={clearSelectedImage}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:border-rose-300 hover:text-rose-600"
+              >
+                <Trash2 size={14} />
+                Limpar
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-500">
+            {selectedImageFile
+              ? `✅ Arquivo selecionado: ${selectedImageFile.name} (${(selectedImageFile.size / 1024).toFixed(0)}KB) - Pronto para upload`
+              : "📷 Formatos permitidos: JPEG, PNG, WEBP (máx. 5MB). Digite uma URL ou faça upload de uma imagem."}
+          </p>
+        </div>
       </div>
 
       {/* Autor */}
@@ -317,8 +607,8 @@ export default function PostForm({ mode, post }: PostFormProps) {
           </label>
           <input
             type="text"
-            name="author_image"
-            value={formData.author_image}
+            name="authorImage"
+            value={formData.authorImage}
             onChange={handleChange}
             placeholder="https://exemplo.com/avatar.jpg"
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -349,8 +639,8 @@ export default function PostForm({ mode, post }: PostFormProps) {
           </label>
           <input
             type="text"
-            name="reading_time"
-            value={formData.reading_time}
+            name="readingTime"
+            value={formData.readingTime}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -422,8 +712,8 @@ export default function PostForm({ mode, post }: PostFormProps) {
           </label>
           <input
             type="datetime-local"
-            name="published_at"
-            value={formData.published_at}
+            name="publishedAt"
+            value={formData.publishedAt}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />

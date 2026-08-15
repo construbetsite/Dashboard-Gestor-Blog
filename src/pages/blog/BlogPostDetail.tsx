@@ -154,10 +154,10 @@ export default function BlogPostDetail() {
         </div>
       </header>
 
-      {post.image && (
+      {post.image_url && (
         <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200">
           <img
-            src={getImageUrl(post.image)}
+            src={getImageUrl(post.image_url)}
             alt={post.title}
             className="w-full object-cover"
             onError={(e) => {

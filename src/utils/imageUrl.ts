@@ -7,10 +7,10 @@
  */
 
 const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL || "https://yxdmqgjezebwlxgbvocf.supabase.co";
+  import.meta.env.VITE_SUPABASE_URL;
 
 /** Nome do bucket público no Supabase Storage. */
-const SUPABASE_BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "blog";
+const SUPABASE_BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "posts-images";
 
 /** Expressão para detectar uma URL absoluta já válida (http/https). */
 const ABSOLUTE_URL_RE = /^https?:\/\/.+/i;

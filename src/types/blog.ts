@@ -31,12 +31,18 @@ export interface BlogPost {
   title: string;
   description: string;
   content: string;
-  image: string;
   category: string;        // Nome da categoria (texto)
   categoria_id: string;    // UUID da categoria
   reading_time: string;
   type: PostType | string;
   featured: boolean;
+  status: boolean;
+  image_url?: string | null;
+  image_path?: string | null;
+  image_filename?: string | null;
+  image_size?: number | null;
+  image_mime_type?: string | null;
+  storage_bucket?: string | null;
   video1?: string;
   video2?: string;
   author?: string;
@@ -50,19 +56,60 @@ export interface BlogPost {
 }
 
 // ============================================================
-// INPUTS PARA CRIAÇÃO/ATUALIZAÇÃO
+// INPUTS PARA CRIAÇÃO/ATUALIZAÇÃO (PAYLOAD DO FRONTEND - camelCase)
 // ============================================================
 
+/**
+ * Payload para criação/atualização de post (Frontend → Backend).
+ * ✅ Backend espera AMBOS categoriaId (UUID) e category (string)
+ * ✅ Todos os campos em camelCase
+ * ✅ imageUrl/imagePath (vindo do upload), NÃO enviar campo "image"
+ */
+export interface CreatePostPayload {
+  // ✅ OBRIGATÓRIOS
+  title: string;
+  description: string;
+  categoriaId: string;              // UUID da categoria (OBRIGATÓRIO)
+  category: string;                 // Nome da categoria (OBRIGATÓRIO)
+  
+  // ✅ OPCIONAIS
+  content?: string;
+  slug?: string;
+  readingTime?: string;
+  type?: PostType | string;
+  featured?: boolean;
+  status?: boolean;
+  video1?: string | null;
+  video2?: string | null;
+  author?: string | null;
+  authorImage?: string | null;
+  tags?: string[];
+  imageUrl?: string | null;
+  imagePath?: string | null;
+  imageFilename?: string | null;
+  imageSize?: number | null;
+  imageMimeType?: string | null;
+  storageBucket?: string | null;
+  publishedAt?: string | null;
+}
+
+export type UpdatePostPayload = Partial<CreatePostPayload>;
+
+/**
+ * Versão legada (snake_case) mantida para compatibilidade
+ * @deprecated Use CreatePostPayload (camelCase) em vez disso
+ */
 export type CreateBlogPostInput = {
   title: string;
   description: string;
   content: string;
-  image?: string;
+  image_url?: string | null;
   category: string;
   categoria_id?: string | null;
   reading_time?: string;
   type?: PostType | string;
   featured?: boolean;
+  status?: boolean;
   video1?: string;
   video2?: string;
   author?: string;
@@ -102,4 +149,5 @@ export interface ListBlogPostsParams {
   category?: string;
   tag?: string;
   featured?: boolean;
+  status?: boolean;
 }

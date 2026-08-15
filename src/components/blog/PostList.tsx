@@ -98,9 +98,9 @@ export default function BlogPostsList() {
                   <tr key={p.id} className="hover:bg-slate-50/40">
                     <td className="px-4 py-3 font-medium text-slate-900">
                       <div className="flex items-center gap-3">
-                        {p.image && (
+                        {p.image_url && (
                           <img
-                            src={getImageUrl(p.image)}
+                            src={getImageUrl(p.image_url)}
                             alt=""
                             className="h-10 w-14 rounded-md object-cover"
                             onError={(e) => {

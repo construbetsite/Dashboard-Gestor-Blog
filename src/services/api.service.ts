@@ -38,16 +38,27 @@ export const api = {
     return response.json();
   },
 
-  post: async <T = any>(endpoint: string, data?: any): Promise<T> => {
+  post: async <T = any>(endpoint: string, data?: any, options?: { headers?: HeadersInit }): Promise<T> => {
     const headers = await getAuthHeaders();
-    
+    const isFormData = data instanceof FormData;
+
+    if (isFormData) {
+      delete (headers as Record<string, string>)['Content-Type'];
+    }
+
+    const mergedHeaders = options?.headers
+      ? { ...headers, ...(options.headers as Record<string, string>) }
+      : headers;
+
     console.log(`📤 [POST] ${API_BASE}/api${endpoint}`);
-    console.log('📤 Dados enviados:', JSON.stringify(data, null, 2));
+    if (!isFormData) {
+      console.log('📤 Dados enviados:', JSON.stringify(data, null, 2));
+    }
     
     const response = await fetch(`${API_BASE}/api${endpoint}`, {
       method: 'POST',
-      headers,
-      body: data ? JSON.stringify(data) : undefined,
+      headers: mergedHeaders,
+      body: isFormData ? data : data ? JSON.stringify(data) : undefined,
     });
     
     if (!response.ok) {
@@ -58,16 +69,27 @@ export const api = {
     return response.json();
   },
 
-  put: async <T = any>(endpoint: string, data: any): Promise<T> => {
+  put: async <T = any>(endpoint: string, data: any, options?: { headers?: HeadersInit }): Promise<T> => {
     const headers = await getAuthHeaders();
-    
+    const isFormData = data instanceof FormData;
+
+    if (isFormData) {
+      delete (headers as Record<string, string>)['Content-Type'];
+    }
+
+    const mergedHeaders = options?.headers
+      ? { ...headers, ...(options.headers as Record<string, string>) }
+      : headers;
+
     console.log(`📤 [PUT] ${API_BASE}/api${endpoint}`);
-    console.log('📤 Dados enviados:', JSON.stringify(data, null, 2));
+    if (!isFormData) {
+      console.log('📤 Dados enviados:', JSON.stringify(data, null, 2));
+    }
     
     const response = await fetch(`${API_BASE}/api${endpoint}`, {
       method: 'PUT',
-      headers,
-      body: JSON.stringify(data),
+      headers: mergedHeaders,
+      body: isFormData ? data : JSON.stringify(data),
     });
     
     if (!response.ok) {
