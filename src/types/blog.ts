@@ -21,6 +21,7 @@ export interface BlogCategoriaResumida {
   nome: string;
 }
 
+
 // ============================================================
 // BLOG POST - PRINCIPAL (snake_case para consistência com Supabase)
 // ============================================================
