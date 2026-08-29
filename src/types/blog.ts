@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // BLOG - TIPOS COMPLETOS
 // ============================================================
 
@@ -8,7 +8,7 @@ export type PostType = "article" | "video" | "news";
 // CATEGORIA
 // ============================================================
 
-/** Categoria pré-definida do blog (tabela `blog_categorias`). */
+/** Categoria prÃ©-definida do blog (tabela `blog_categorias`). */
 export interface BlogCategoria {
   id: string;
   nome: string;
@@ -23,9 +23,15 @@ export interface BlogCategoriaResumida {
 
 
 // ============================================================
-// BLOG POST - PRINCIPAL (snake_case para consistência com Supabase)
+// BLOG POST - PRINCIPAL (snake_case para consistÃªncia com Supabase)
 // ============================================================
 
+export interface BlogPostProduct {
+  id: string;
+  name: string;
+  slug?: string;
+  imageUrl?: string | null;
+}
 export interface BlogPost {
   id: string;              // UUID
   slug: string;
@@ -54,26 +60,29 @@ export interface BlogPost {
   published_at: string | null;
   // Relacionamento com a categoria (populado pela API)
   categoria?: BlogCategoria;
+  // âœ… Produtos vinculados (admin + ?include=products)
+  product_ids?: string[];
+  products?: BlogPostProduct[];
 }
 
 // ============================================================
-// INPUTS PARA CRIAÇÃO/ATUALIZAÇÃO (PAYLOAD DO FRONTEND - camelCase)
+// INPUTS PARA CRIAÃ‡ÃƒO/ATUALIZAÃ‡ÃƒO (PAYLOAD DO FRONTEND - camelCase)
 // ============================================================
 
 /**
- * Payload para criação/atualização de post (Frontend → Backend).
- * ✅ Backend espera AMBOS categoriaId (UUID) e category (string)
- * ✅ Todos os campos em camelCase
- * ✅ imageUrl/imagePath (vindo do upload), NÃO enviar campo "image"
+ * Payload para criaÃ§Ã£o/atualizaÃ§Ã£o de post (Frontend â†’ Backend).
+ * âœ… Backend espera AMBOS categoriaId (UUID) e category (string)
+ * âœ… Todos os campos em camelCase
+ * âœ… imageUrl/imagePath (vindo do upload), NÃƒO enviar campo "image"
  */
 export interface CreatePostPayload {
-  // ✅ OBRIGATÓRIOS
+  // âœ… OBRIGATÃ“RIOS
   title: string;
   description: string;
-  categoriaId: string;              // UUID da categoria (OBRIGATÓRIO)
-  category: string;                 // Nome da categoria (OBRIGATÓRIO)
+  categoriaId: string;              // UUID da categoria (OBRIGATÃ“RIO)
+  category: string;                 // Nome da categoria (OBRIGATÃ“RIO)
   
-  // ✅ OPCIONAIS
+  // âœ… OPCIONAIS
   content?: string;
   slug?: string;
   readingTime?: string;
@@ -97,7 +106,7 @@ export interface CreatePostPayload {
 export type UpdatePostPayload = Partial<CreatePostPayload>;
 
 /**
- * Versão legada (snake_case) mantida para compatibilidade
+ * VersÃ£o legada (snake_case) mantida para compatibilidade
  * @deprecated Use CreatePostPayload (camelCase) em vez disso
  */
 export type CreateBlogPostInput = {

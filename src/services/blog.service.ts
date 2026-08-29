@@ -1,4 +1,4 @@
-import { api } from "./api.service";
+﻿import { api } from "./api.service";
 import type {
   BlogCategoria,
   BlogListResponse,
@@ -19,33 +19,34 @@ export interface PostPayload {
   title: string;
   description: string;
   content?: string;
-  categoriaId?: string | null;          // ✅ UUID da categoria
-  category?: string | null;             // ✅ NOME LEGÍVEL (OBRIGATÓRIO)
-  imageUrl?: string | null;             // ✅ camelCase (vindo do upload)
-  imagePath?: string | null;            // ✅ camelCase
-  imageFilename?: string | null;        // ✅ camelCase
-  imageSize?: number | null;            // ✅ camelCase
-  imageMimeType?: string | null;        // ✅ camelCase
-  storageBucket?: string | null;        // ✅ camelCase
-  readingTime?: string;                 // ✅ camelCase
+  categoriaId?: string | null;          // âœ… UUID da categoria
+  category?: string | null;             // âœ… NOME LEGÃVEL (OBRIGATÃ“RIO)
+  imageUrl?: string | null;             // âœ… camelCase (vindo do upload)
+  imagePath?: string | null;            // âœ… camelCase
+  imageFilename?: string | null;        // âœ… camelCase
+  imageSize?: number | null;            // âœ… camelCase
+  imageMimeType?: string | null;        // âœ… camelCase
+  storageBucket?: string | null;        // âœ… camelCase
+  readingTime?: string;                 // âœ… camelCase
   slug?: string;
   featured?: boolean;
   status?: boolean;
   video1?: string;
   video2?: string;
   author?: string;
-  authorImage?: string;                 // ✅ camelCase
+  authorImage?: string;                 // âœ… camelCase
   tags?: string[];
-  publishedAt?: string | null;          // ✅ camelCase
+  publishedAt?: string | null;          // âœ… camelCase
+  productIds?: string[];                // âœ… camelCase (backend converte para product_ids)
 }
 
-// ✅ Validação de UUID (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+// âœ… ValidaÃ§Ã£o de UUID (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
 export const isValidUUID = (id: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(id);
 };
 
-// ✅ Validação de URL
+// âœ… ValidaÃ§Ã£o de URL
 export const isValidURL = (url: string): boolean => {
   try {
     new URL(url);
@@ -55,50 +56,50 @@ export const isValidURL = (url: string): boolean => {
   }
 };
 
-// ✅ Função para normalizar e validar payload antes de enviar
+// âœ… FunÃ§Ã£o para normalizar e validar payload antes de enviar
 // REGRA DE OURO: SEMPRE envie AMBOS: categoriaId (UUID) E category (nome)
 function normalizeToBackend(data: any): any {
   const result: any = {};
   
-  // ✅ CAMPOS OBRIGATÓRIOS
+  // âœ… CAMPOS OBRIGATÃ“RIOS
   if (!data.title || !data.title.trim()) {
-    console.error("❌ [normalizeToBackend] Campo 'title' é obrigatório");
-    throw new Error("Título é obrigatório");
+    console.error("âŒ [normalizeToBackend] Campo 'title' Ã© obrigatÃ³rio");
+    throw new Error("TÃ­tulo Ã© obrigatÃ³rio");
   }
   if (!data.description || !data.description.trim()) {
-    console.error("❌ [normalizeToBackend] Campo 'description' é obrigatório");
-    throw new Error("Descrição é obrigatória");
+    console.error("âŒ [normalizeToBackend] Campo 'description' Ã© obrigatÃ³rio");
+    throw new Error("DescriÃ§Ã£o Ã© obrigatÃ³ria");
   }
   
   result.title = data.title.trim();
   result.description = data.description.trim();
 
-  // ✅ CAMPOS OPCIONAIS - apenas incluir se tiverem valor
+  // âœ… CAMPOS OPCIONAIS - apenas incluir se tiverem valor
   if (data.content) result.content = data.content;
   
-  // ✅ CATEGORIA - ENVIAR AMBOS: UUID (categoriaId) E NOME (category)
+  // âœ… CATEGORIA - ENVIAR AMBOS: UUID (categoriaId) E NOME (category)
   if (data.categoriaId) {
     if (!isValidUUID(data.categoriaId)) {
-      console.error("❌ [normalizeToBackend] categoriaId inválido (não é UUID):", data.categoriaId);
-      throw new Error("categoriaId deve ser um UUID válido (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)");
+      console.error("âŒ [normalizeToBackend] categoriaId invÃ¡lido (nÃ£o Ã© UUID):", data.categoriaId);
+      throw new Error("categoriaId deve ser um UUID vÃ¡lido (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)");
     }
     result.categoriaId = data.categoriaId;
   }
   
-  // ✅ category (nome legível) – OBRIGATÓRIO para a coluna NOT NULL
+  // âœ… category (nome legÃ­vel) â€“ OBRIGATÃ“RIO para a coluna NOT NULL
   if (data.category) {
     result.category = data.category.trim();
   } else {
-    console.error("❌ [normalizeToBackend] Campo 'category' (nome) é obrigatório");
-    throw new Error("Nome da categoria é obrigatório");
+    console.error("âŒ [normalizeToBackend] Campo 'category' (nome) Ã© obrigatÃ³rio");
+    throw new Error("Nome da categoria Ã© obrigatÃ³rio");
   }
 
-  // ✅ IMAGEM - enviar em camelCase (imageUrl, imagePath, etc)
+  // âœ… IMAGEM - enviar em camelCase (imageUrl, imagePath, etc)
   // NUNCA enviar campo "image" (singular)
   if (data.imageUrl) {
     if (!isValidURL(data.imageUrl)) {
-      console.error("❌ [normalizeToBackend] imageUrl inválido:", data.imageUrl);
-      throw new Error("imageUrl deve ser uma URL válida");
+      console.error("âŒ [normalizeToBackend] imageUrl invÃ¡lido:", data.imageUrl);
+      throw new Error("imageUrl deve ser uma URL vÃ¡lida");
     }
     result.imageUrl = data.imageUrl.trim();
   }
@@ -108,7 +109,7 @@ function normalizeToBackend(data: any): any {
   if (data.imageMimeType) result.imageMimeType = data.imageMimeType.trim();
   if (data.storageBucket) result.storageBucket = data.storageBucket.trim();
 
-  // ✅ Outros campos
+  // âœ… Outros campos
   if (data.slug) result.slug = data.slug.trim();
   if (data.readingTime) result.readingTime = data.readingTime.trim();
   if (data.type) result.type = data.type;
@@ -124,13 +125,17 @@ function normalizeToBackend(data: any): any {
   if (Array.isArray(data.tags) && data.tags.length > 0) {
     result.tags = data.tags;
   }
+  // âœ… PRODUTOS VINCULADOS (array de UUIDs; aceita [] para limpar)
+  if (Array.isArray(data.productIds)) {
+    result.productIds = data.productIds;
+  }
 
-  // ✅ AVISOS DE SEGURANÇA (apenas informativos)
+  // âœ… AVISOS DE SEGURANÃ‡A (apenas informativos)
   if ('image' in data) {
-    console.warn("⚠️ [normalizeToBackend] Campo 'image' (singular) detectado. Use 'imageUrl' em vez disso.");
+    console.warn("âš ï¸ [normalizeToBackend] Campo 'image' (singular) detectado. Use 'imageUrl' em vez disso.");
   }
   if ('categoria_id' in data) {
-    console.warn("⚠️ [normalizeToBackend] Campo 'categoria_id' (snake_case) detectado. Use 'categoriaId' (camelCase).");
+    console.warn("âš ï¸ [normalizeToBackend] Campo 'categoria_id' (snake_case) detectado. Use 'categoriaId' (camelCase).");
   }
 
   return result;
@@ -149,46 +154,46 @@ export const blogService = {
     return api.get(`/blog/posts${qs ? `?${qs}` : ""}`) as Promise<BlogListResponse>;
   },
 
-  buscarPorId: (id: string) =>
-    api.get(`/blog/posts/id/${encodeURIComponent(id)}`) as Promise<BlogItemResponse>,
+  buscarPorId: (id: string, includeProducts = false) =>
+    api.get(`/blog/posts/id/${encodeURIComponent(id)}${includeProducts ? "?include=products" : ""}`) as Promise<BlogItemResponse>,
 
   buscarPorSlug: (slug: string) =>
     api.get(`/blog/posts/slug/${encodeURIComponent(slug)}`) as Promise<BlogItemResponse>,
 
-  // ✅ UPLOAD DE IMAGEM (multipart/form-data)
-  // ⚠️ IMPORTANTE: NÃO definir Content-Type manualmente para FormData
+  // âœ… UPLOAD DE IMAGEM (multipart/form-data)
+  // âš ï¸ IMPORTANTE: NÃƒO definir Content-Type manualmente para FormData
   // Deixar o navegador/fetch definir automaticamente (com boundary correto)
   uploadImage: (formData: FormData) => {
     return api.post("/blog/upload", formData) as Promise<UploadImageResponse>;
   },
 
-  // ✅ Criar - normalizar dados e validar contrato de API
+  // âœ… Criar - normalizar dados e validar contrato de API
   criar: (dados: Partial<PostPayload>) => {
     const normalized = normalizeToBackend(dados);
-    console.log("📤 [blogService.criar] Payload normalizado (camelCase):");
+    console.log("ðŸ“¤ [blogService.criar] Payload normalizado (camelCase):");
     console.log(JSON.stringify(normalized, null, 2));
-    console.log("✅ [blogService.criar] Verificação:", {
+    console.log("âœ… [blogService.criar] VerificaÃ§Ã£o:", {
       temTitle: !!normalized.title,
       temDescription: !!normalized.description,
       temCategoriaId: !!normalized.categoriaId,
       temCategory: !!normalized.category,
-      contemImageField: 'image' in normalized ? "❌" : "✅",
+      contemImageField: 'image' in normalized ? "âŒ" : "âœ…",
     });
     return api.post("/blog/posts", normalized) as Promise<BlogItemResponse>;
   },
 
-  // ✅ Editar - normalizar dados e validar contrato de API
+  // âœ… Editar - normalizar dados e validar contrato de API
   editar: (id: string, dados: Partial<PostPayload>) => {
     const normalized = normalizeToBackend(dados);
-    console.log(`📤 [blogService.editar] ID: ${id}`);
-    console.log("📤 [blogService.editar] Payload normalizado (camelCase):");
+    console.log(`ðŸ“¤ [blogService.editar] ID: ${id}`);
+    console.log("ðŸ“¤ [blogService.editar] Payload normalizado (camelCase):");
     console.log(JSON.stringify(normalized, null, 2));
-    console.log("✅ [blogService.editar] Verificação:", {
+    console.log("âœ… [blogService.editar] VerificaÃ§Ã£o:", {
       temTitle: !!normalized.title,
       temDescription: !!normalized.description,
       temCategoriaId: !!normalized.categoriaId,
       temCategory: !!normalized.category,
-      contemImageField: 'image' in normalized ? "❌" : "✅",
+      contemImageField: 'image' in normalized ? "âŒ" : "âœ…",
     });
     return api.put(`/blog/posts/${encodeURIComponent(id)}`, normalized) as Promise<BlogItemResponse>;
   },
@@ -200,3 +205,4 @@ export const blogService = {
 };
 
 export const blogApi = blogService;
+

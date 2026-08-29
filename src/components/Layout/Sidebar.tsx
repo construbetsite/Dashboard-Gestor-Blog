@@ -6,6 +6,8 @@ import {
   Newspaper,
   Package,
   LayoutDashboard,
+  LayoutGrid,
+  Users,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -28,6 +30,16 @@ const menuItems = [
     name: "Produtos",
     path: "/admin/produtos",
     icon: Package,
+  },
+  {
+    name: "Landing Page",
+    path: "/dashboard/landing-categories",
+    icon: LayoutGrid,
+  },
+  {
+    name: "Leads",
+    path: "/dashboard/leads",
+    icon: Users,
   },
 ];
 

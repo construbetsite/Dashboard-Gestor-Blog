@@ -17,7 +17,13 @@
 //
 // ============================================================
 
-import { ExternalLink, Loader2, PackageOpen, RefreshCw } from "lucide-react";
+import {
+  ExternalLink,
+  Loader2,
+  PackageOpen,
+  RefreshCw,
+  Star,
+} from "lucide-react";
 
 import { getImageUrl } from "../../utils/imageUrl";
 
@@ -118,6 +124,28 @@ function formatPrice(
       style: "currency",
       currency: "BRL",
     }
+  );
+}
+
+// ============================================================
+// BADGE DE DESTAQUE (featured)
+// ============================================================
+
+function FeaturedBadge({
+  featured,
+}: {
+  featured?: boolean;
+}) {
+  return featured ? (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+      <Star size={13} className="fill-amber-500 text-amber-500" />
+      Sim
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
+      <Star size={13} className="text-slate-400" />
+      Não
+    </span>
   );
 }
 
@@ -279,6 +307,10 @@ export default function ProductTable({
               </th>
 
               <th className="px-4 py-3 text-left font-medium">
+                Destaque
+              </th>
+
+              <th className="px-4 py-3 text-left font-medium">
                 Ações
               </th>
             </tr>
@@ -433,6 +465,18 @@ export default function ProductTable({
                     <StatusBadge
                       status={
                         product.active
+                      }
+                    />
+                  </td>
+
+                  {/* ==========================================
+                      DESTAQUE
+                  ========================================== */}
+
+                  <td className="px-4 py-3">
+                    <FeaturedBadge
+                      featured={
+                        product.featured
                       }
                     />
                   </td>

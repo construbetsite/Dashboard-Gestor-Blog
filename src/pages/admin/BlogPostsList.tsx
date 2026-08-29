@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, AlertTriangle, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { blogService } from "../../services/blog.service"; // ✅ CORRIGIDO
+import { blogService } from "../../services/blog.service"; // âœ… CORRIGIDO
 import type { BlogPost } from "../../types/blog";
 import { formatDate } from "../../utils/formatDate";
 import { getImageUrl } from "../../utils/imageUrl";
@@ -120,13 +120,14 @@ export default function BlogPostsList() {
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-slate-700">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Título</th>
+                  <th className="text-left px-4 py-3 font-medium">TÃ­tulo</th>
                   <th className="text-left px-4 py-3 font-medium">Categoria</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-left px-4 py-3 font-medium">Data</th>
                   <th className="text-left px-4 py-3 font-medium">Destaque</th>
+                  <th className="text-left px-4 py-3 font-medium">Produtos</th>
                   <th className="text-left px-4 py-3 font-medium">Ver</th>
-                  <th className="text-left px-4 py-3 font-medium">Ações</th>
+                  <th className="text-left px-4 py-3 font-medium">AÃ§Ãµes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -149,14 +150,14 @@ export default function BlogPostsList() {
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       <span className="rounded-full bg-[#004AAD]/10 px-2.5 py-1 text-xs font-medium text-[#004AAD]">
-                        {p.categoria?.nome || p.category || "—"}
+                        {p.categoria?.nome || p.category || "â€”"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       <StatusBadge status={p.status ?? true} />
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {formatDate(p.created_at)} {/* ✅ CORRIGIDO */}
+                      {formatDate(p.created_at)} {/* âœ… CORRIGIDO */}
                     </td>
                     <td className="px-4 py-3">
                       {p.featured ? (
@@ -164,7 +165,16 @@ export default function BlogPostsList() {
                           Destaque
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-400">—</span>
+                        <span className="text-xs text-slate-400">â€”</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {p.product_ids && p.product_ids.length > 0 ? (
+                        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                          {p.product_ids.length} {p.product_ids.length === 1 ? "produto" : "produtos"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">â€”</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -191,3 +201,4 @@ export default function BlogPostsList() {
     </div>
   );
 }
+

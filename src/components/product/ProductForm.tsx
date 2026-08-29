@@ -15,7 +15,7 @@ import type {
   CommercialType,
   CreateProductPayload,
   Product,
-  
+
   UpdateProductPayload,
 } from "../../types/product";
 import type {ProductCategory} from "../../types/productCategory";
@@ -470,10 +470,39 @@ export default function ProductForm({
         />
       </div>
 
+      {/* DESTAQUE (featured) */}
+      <div className="flex items-center justify-between rounded-xl border-slate-200 bg-white p-4">
+        <div className="pr-4">
+          <p className="text-sm font-medium text-slate-700">
+            Produto em destaque
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Exibe este produto em destaque na home e vitrines.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={form.featured}
+          aria-label="Produto em destaque"
+          onClick={() => handleChange("featured", !form.featured)}
+          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+            form.featured ? "bg-blue-600" : "bg-slate-300"
+          }`}
+        >
+          <span
+            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+              form.featured ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
+
       {/* SEO */}
       <details className="rounded-xl border border-slate-200 bg-white p-4">
         <summary className="cursor-pointer text-sm font-medium text-slate-700">
-          Configurações extras (SEO, destaque)
+          Configurações extras (SEO)
         </summary>
         <div className="mt-4 space-y-4">
           <div>
@@ -500,15 +529,6 @@ export default function ProductForm({
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={form.featured}
-              onChange={(e) => handleChange("featured", e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Destacar produto
-          </label>
         </div>
       </details>
 

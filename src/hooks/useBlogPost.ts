@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { blogService } from "../services/blog.service";
 import type { BlogPost } from "../types/blog";
 
@@ -10,7 +10,7 @@ interface UseBlogPostResult {
   refetch: () => void;
 }
 
-/** Busca um post pelo slug (público) ou pelo id (admin). */
+/** Busca um post pelo slug (pÃºblico) ou pelo id (admin). */
 export function useBlogPost(
   slugOrId?: string,
   mode: "slug" | "id" = "slug",
@@ -35,16 +35,17 @@ export function useBlogPost(
       let response;
       
       if (mode === "slug") {
-        // ✅ Buscar por Slug
+        // âœ… Buscar por Slug
         response = await blogService.buscarPorSlug(slugOrId);
       } else {
-        // ✅ Buscar por ID
-        response = await blogService.buscarPorId(slugOrId);
+        // âœ… Buscar por ID
+        // âœ… Admin: carrega com ?include=products para pré-seleção do ProductMultiSelect
+        response = await blogService.buscarPorId(slugOrId, true);
       }
       
       setPost(response.data);
     } catch (e: any) {
-      console.error("❌ Erro ao buscar post:", e);
+      console.error("âŒ Erro ao buscar post:", e);
       
       if (e?.status === 404 || e?.message?.includes("404")) {
         setNotFound(true);
@@ -65,3 +66,4 @@ export function useBlogPost(
 
   return { post, loading, error, notFound, refetch: fetchPost };
 }
+

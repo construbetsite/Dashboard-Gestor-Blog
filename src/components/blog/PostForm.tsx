@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { blogService, isValidUUID } from "../../services/blog.service";
 import type { BlogPost } from "../../types/blog";
 import { Loader2, ImageIcon, Trash2, UploadCloud } from "lucide-react";
+import ProductMultiSelect from "./ProductMultiSelect";
 import { getImageUrl } from "../../utils/imageUrl";
 import { validateImageFile, formatUploadError } from "../../utils/imageValidation";
 
@@ -26,6 +27,10 @@ export default function PostForm({ mode, post }: PostFormProps) {
   const [categoriasLoading, setCategoriasLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  // âœ… Produtos vinculados (array de UUIDs; campo OPCIONAL)
+  const [productIds, setProductIds] = useState<string[]>([]);
+  // Produtos jÃ¡ vinculados ao post (vindos do ?include=products), para resolver nomes
+  const preloadedProducts = post?.products?.map((p) => ({ id: p.id, name: p.name })) ?? null;
 
   const resolvePreviewUrl = (value?: string) => {
     if (!value) return "";
@@ -37,15 +42,15 @@ export default function PostForm({ mode, post }: PostFormProps) {
     return getImageUrl(trimmed);
   };
 
-  // ✅ Estado do formulário (camelCase conforme contrato de API)
+  // âœ… Estado do formulÃ¡rio (camelCase conforme contrato de API)
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
     description: "",
     content: "",
     imageUrl: "",
-    categoriaId: "",      // UUID (obrigatório)
-    category: "",         // Nome legível (obrigatório) ← NOVO
+    categoriaId: "",      // UUID (obrigatÃ³rio)
+    category: "",         // Nome legÃ­vel (obrigatÃ³rio) â† NOVO
     readingTime: "5 min",
     type: "article",
     featured: false,
@@ -58,10 +63,10 @@ export default function PostForm({ mode, post }: PostFormProps) {
     publishedAt: "",
   });
 
-  // ✅ Atualizar formData quando post mudar
+  // âœ… Atualizar formData quando post mudar
   useEffect(() => {
     if (post) {
-      console.log("📝 [PostForm] Carregando post para edição:", post);
+      console.log("ðŸ“ [PostForm] Carregando post para ediÃ§Ã£o:", post);
       const postImage = post.image_url || "";
 
       setFormData({
@@ -71,7 +76,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         content: post.content || "",
         imageUrl: postImage,
         categoriaId: post.categoria_id || "",
-        category: post.category || "",        // ← Nome da categoria
+        category: post.category || "",        // â† Nome da categoria
         readingTime: post.reading_time || "5 min",
         type: post.type || "article",
         featured: post.featured || false,
@@ -87,25 +92,28 @@ export default function PostForm({ mode, post }: PostFormProps) {
       });
       setImagePreview(resolvePreviewUrl(postImage));
       setSelectedImageFile(null);
+      // âœ… PrÃ©-selecionar produtos vinculados (ediÃ§Ã£o)
+      setProductIds(Array.isArray(post.product_ids) ? post.product_ids : []);
     } else {
       setFormData((prev) => ({ ...prev, imageUrl: "" }));
       setImagePreview("");
       setSelectedImageFile(null);
+      setProductIds([]);
     }
   }, [post]);
 
-  // ✅ Carregar categorias
+  // âœ… Carregar categorias
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
         setCategoriasLoading(true);
-        console.log("📚 [PostForm] Buscando categorias...");
+        console.log("ðŸ“š [PostForm] Buscando categorias...");
         const response = await blogService.listarCategorias();
         const data = Array.isArray(response) ? response : response?.data || [];
         setCategorias(data);
-        console.log("📚 [PostForm] Categorias carregadas:", data);
+        console.log("ðŸ“š [PostForm] Categorias carregadas:", data);
       } catch (err) {
-        console.error("❌ [PostForm] Erro ao carregar categorias:", err);
+        console.error("âŒ [PostForm] Erro ao carregar categorias:", err);
       } finally {
         setCategoriasLoading(false);
       }
@@ -113,7 +121,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
     fetchCategorias();
   }, []);
 
-  // ✅ Handler para mudanças nos campos
+  // âœ… Handler para mudanÃ§as nos campos
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -146,7 +154,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
     const validation = validateImageFile(file);
     if (!validation.valid) {
       setError(validation.error || "Erro ao validar imagem");
-      console.warn("⚠️ [PostForm] Validação de imagem falhou:", validation.error);
+      console.warn("âš ï¸ [PostForm] ValidaÃ§Ã£o de imagem falhou:", validation.error);
       e.target.value = "";
       return;
     }
@@ -158,7 +166,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
       setImagePreview(previewUrl);
       setFormData((prev) => ({ ...prev, imageUrl: "" }));
       setError(null);
-      console.log("✅ [PostForm] Imagem selecionada:", {
+      console.log("âœ… [PostForm] Imagem selecionada:", {
         name: file.name,
         size: `${(file.size / 1024).toFixed(2)}KB`,
         type: file.type,
@@ -175,12 +183,12 @@ export default function PostForm({ mode, post }: PostFormProps) {
     setFormData((prev) => ({ ...prev, imageUrl: prev.imageUrl || "" }));
   };
 
-  // ✅ Handler para mudança de categoria (armazena AMBOS UUID e nome)
+  // âœ… Handler para mudanÃ§a de categoria (armazena AMBOS UUID e nome)
   const handleCategoriaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = e.target.value;
     const selectedCategory = categorias.find((cat) => cat.id === selectedId);
 
-    console.log(`🔄 [PostForm] Categoria selecionada:`, {
+    console.log(`ðŸ”„ [PostForm] Categoria selecionada:`, {
       id: selectedId,
       nome: selectedCategory?.nome,
     });
@@ -188,7 +196,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
     setFormData((prev) => ({
       ...prev,
       categoriaId: selectedId,                // UUID
-      category: selectedCategory?.nome || "", // Nome legível
+      category: selectedCategory?.nome || "", // Nome legÃ­vel
     }));
   };
 
@@ -206,10 +214,10 @@ export default function PostForm({ mode, post }: PostFormProps) {
       let imageSize: number | null = null;
       let imageMimeType: string | null = null;
 
-      // ✅ ETAPA 1: Upload da imagem (se houver)
+      // âœ… ETAPA 1: Upload da imagem (se houver)
       if (selectedImageFile) {
         setUploadingImage(true);
-        console.log("📤 [PostForm] Fazendo upload do arquivo...", {
+        console.log("ðŸ“¤ [PostForm] Fazendo upload do arquivo...", {
           name: selectedImageFile.name,
           size: selectedImageFile.size,
           type: selectedImageFile.type,
@@ -227,12 +235,12 @@ export default function PostForm({ mode, post }: PostFormProps) {
             imageFilename = selectedImageFile.name;
             imageSize = selectedImageFile.size;
             imageMimeType = selectedImageFile.type;
-            console.log("✅ [PostForm] Upload concluído:", { imageUrl, imagePath });
+            console.log("âœ… [PostForm] Upload concluÃ­do:", { imageUrl, imagePath });
           } else {
             throw new Error(uploadResponse.message || "Falha no upload da imagem");
           }
         } catch (uploadError: any) {
-          console.error("❌ [PostForm] Erro no upload:", uploadError);
+          console.error("âŒ [PostForm] Erro no upload:", uploadError);
 
           let errorMessage = "Erro ao fazer upload da imagem";
           if (uploadError.response?.status === 413) {
@@ -256,11 +264,11 @@ export default function PostForm({ mode, post }: PostFormProps) {
         }
       }
 
-      // ✅ ETAPA 2: Validar categoria (obrigatório)
+      // âœ… ETAPA 2: Validar categoria (obrigatÃ³rio)
       if (!formData.categoriaId || !formData.category) {
-        setError("Selecione uma categoria válida (UUID e nome são obrigatórios)");
+        setError("Selecione uma categoria vÃ¡lida (UUID e nome sÃ£o obrigatÃ³rios)");
         setIsSubmitting(false);
-        console.error("❌ [PostForm] Categoria incompleta:", {
+        console.error("âŒ [PostForm] Categoria incompleta:", {
           categoriaId: formData.categoriaId,
           category: formData.category,
         });
@@ -268,18 +276,18 @@ export default function PostForm({ mode, post }: PostFormProps) {
       }
 
       if (!isValidUUID(formData.categoriaId)) {
-        setError("Categoria selecionada é inválida. Selecione uma categoria válida.");
+        setError("Categoria selecionada Ã© invÃ¡lida. Selecione uma categoria vÃ¡lida.");
         setIsSubmitting(false);
-        console.error("❌ [PostForm] UUID de categoria inválido:", formData.categoriaId);
+        console.error("âŒ [PostForm] UUID de categoria invÃ¡lido:", formData.categoriaId);
         return;
       }
 
-      // ✅ ETAPA 3: Montar o payload em camelCase (conforme contrato de API)
+      // âœ… ETAPA 3: Montar o payload em camelCase (conforme contrato de API)
       const dataToSend: any = {
         title: formData.title,
         description: formData.description,
-        categoriaId: formData.categoriaId,   // ← UUID (obrigatório)
-        category: formData.category,         // ← Nome legível (obrigatório)
+        categoriaId: formData.categoriaId,   // â† UUID (obrigatÃ³rio)
+        category: formData.category,         // â† Nome legÃ­vel (obrigatÃ³rio)
       };
 
       // Adicionar campos opcionais apenas se tiverem valor
@@ -304,33 +312,36 @@ export default function PostForm({ mode, post }: PostFormProps) {
         if (parsedTags.length > 0) dataToSend.tags = parsedTags;
       }
 
+      // âœ… PRODUTOS VINCULADOS: sempre enviar o array completo (estado atual do campo)
+      // Backend converte productIds -> product_ids (toSnakeCase). Aceita [] para limpar.
+      dataToSend.productIds = Array.isArray(productIds) ? productIds : [];
       // Dados de imagem (vindo do upload)
       if (imageUrl) {
         dataToSend.imageUrl = imageUrl;
-        console.log("✅ [PostForm] imageUrl adicionado ao payload:", imageUrl);
+        console.log("âœ… [PostForm] imageUrl adicionado ao payload:", imageUrl);
       }
       if (imagePath) dataToSend.imagePath = imagePath;
       if (imageFilename) dataToSend.imageFilename = imageFilename;
       if (imageSize) dataToSend.imageSize = imageSize;
       if (imageMimeType) dataToSend.imageMimeType = imageMimeType;
 
-      // ✅ ETAPA 4: Log de depuração (verificar camelCase)
-      console.log("📤 [PostForm] Payload (camelCase):", JSON.stringify(dataToSend, null, 2));
-      console.log("📤 [PostForm] Verificação de campos:", {
+      // âœ… ETAPA 4: Log de depuraÃ§Ã£o (verificar camelCase)
+      console.log("ðŸ“¤ [PostForm] Payload (camelCase):", JSON.stringify(dataToSend, null, 2));
+      console.log("ðŸ“¤ [PostForm] VerificaÃ§Ã£o de campos:", {
         temTitle: !!dataToSend.title,
         temDescription: !!dataToSend.description,
         temCategoriaId: !!dataToSend.categoriaId,
         temCategory: !!dataToSend.category,
         temImageUrl: !!dataToSend.imageUrl,
-        contemCampoImage: 'image' in dataToSend ? "❌ ERRO: campo 'image' presente!" : "✅ OK",
+        contemCampoImage: 'image' in dataToSend ? "âŒ ERRO: campo 'image' presente!" : "âœ… OK",
       });
 
-      // ✅ ETAPA 5: Submeter o post
+      // âœ… ETAPA 5: Submeter o post
       if (mode === "edit" && post?.id) {
-        console.log(`📝 [PostForm] Editando post: ${post.id}`);
+        console.log(`ðŸ“ [PostForm] Editando post: ${post.id}`);
         await blogService.editar(post.id, dataToSend);
       } else {
-        console.log("📝 [PostForm] Criando novo post");
+        console.log("ðŸ“ [PostForm] Criando novo post");
         await blogService.criar(dataToSend);
       }
 
@@ -339,7 +350,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         navigate("/admin/posts");
       }, 1500);
     } catch (err: any) {
-      console.error("❌ [PostForm] Erro ao salvar post:", err);
+      console.error("âŒ [PostForm] Erro ao salvar post:", err);
 
       let errorMessage = "Erro ao salvar post";
 
@@ -352,12 +363,12 @@ export default function PostForm({ mode, post }: PostFormProps) {
         } else if (errorData?.message) {
           errorMessage = errorData.message;
         } else {
-          errorMessage = "Dados inválidos. Verifique o formulário.";
+          errorMessage = "Dados invÃ¡lidos. Verifique o formulÃ¡rio.";
         }
       } else if (err.response?.status === 401) {
-        errorMessage = "Você não está autenticado. Faça login novamente.";
+        errorMessage = "VocÃª nÃ£o estÃ¡ autenticado. FaÃ§a login novamente.";
       } else if (err.response?.status === 403) {
-        errorMessage = "Você não tem permissão para realizar esta ação.";
+        errorMessage = "VocÃª nÃ£o tem permissÃ£o para realizar esta aÃ§Ã£o.";
       } else if (err.response?.status === 500) {
         errorMessage = "Erro no servidor. Tente novamente mais tarde.";
       }
@@ -382,10 +393,10 @@ export default function PostForm({ mode, post }: PostFormProps) {
         </div>
       )}
 
-      {/* Título */}
+      {/* TÃ­tulo */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Título *
+          TÃ­tulo *
         </label>
         <input
           type="text"
@@ -415,10 +426,10 @@ export default function PostForm({ mode, post }: PostFormProps) {
         </p>
       </div>
 
-      {/* Descrição */}
+      {/* DescriÃ§Ã£o */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Descrição *
+          DescriÃ§Ã£o *
         </label>
         <textarea
           name="description"
@@ -430,10 +441,10 @@ export default function PostForm({ mode, post }: PostFormProps) {
         />
       </div>
 
-      {/* Conteúdo */}
+      {/* ConteÃºdo */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Conteúdo
+          ConteÃºdo
         </label>
         <textarea
           name="content"
@@ -444,7 +455,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         />
       </div>
 
-      {/* ✅ SELEÇÃO DE CATEGORIA (UUID) */}
+      {/* âœ… SELEÃ‡ÃƒO DE CATEGORIA (UUID) */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
           Categoria *
@@ -471,7 +482,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         )}
         {formData.categoriaId && formData.category && (
           <p className="text-xs text-emerald-600 mt-1">
-            ✅ Categoria selecionada: <strong>{formData.category}</strong>
+            âœ… Categoria selecionada: <strong>{formData.category}</strong>
           </p>
         )}
       </div>
@@ -508,7 +519,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
           </button>
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          Posts ativos aparecem no blog. Inativos ficam ocultos da publicação.
+          Posts ativos aparecem no blog. Inativos ficam ocultos da publicaÃ§Ã£o.
         </p>
       </div>
 
@@ -581,8 +592,8 @@ export default function PostForm({ mode, post }: PostFormProps) {
 
           <p className="text-xs text-slate-500">
             {selectedImageFile
-              ? `✅ Arquivo selecionado: ${selectedImageFile.name} (${(selectedImageFile.size / 1024).toFixed(0)}KB) - Pronto para upload`
-              : "📷 Formatos permitidos: JPEG, PNG, WEBP (máx. 5MB). Digite uma URL ou faça upload de uma imagem."}
+              ? `âœ… Arquivo selecionado: ${selectedImageFile.name} (${(selectedImageFile.size / 1024).toFixed(0)}KB) - Pronto para upload`
+              : "ðŸ“· Formatos permitidos: JPEG, PNG, WEBP (mÃ¡x. 5MB). Digite uma URL ou faÃ§a upload de uma imagem."}
           </p>
         </div>
       </div>
@@ -616,10 +627,23 @@ export default function PostForm({ mode, post }: PostFormProps) {
         </div>
       </div>
 
+      {/* âœ… PRODUTOS VINCULADOS (opcional, multi-seleÃ§Ã£o com busca) */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Produtos Vinculados
+        </label>
+        <ProductMultiSelect
+          value={productIds}
+          onChange={setProductIds}
+          preloaded={preloadedProducts}
+          placeholder="Buscar produtos para vincular..."
+          disabled={isSubmitting}
+        />
+      </div>
       {/* Tags */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Tags (separadas por vírgula)
+          Tags (separadas por vÃ­rgula)
         </label>
         <input
           type="text"
@@ -631,7 +655,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         />
       </div>
 
-      {/* Configurações */}
+      {/* ConfiguraÃ§Ãµes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -656,17 +680,17 @@ export default function PostForm({ mode, post }: PostFormProps) {
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="article">Artigo</option>
-            <option value="video">Vídeo</option>
-            <option value="news">Notícia</option>
+            <option value="video">VÃ­deo</option>
+            <option value="news">NotÃ­cia</option>
           </select>
         </div>
       </div>
 
-      {/* Vídeos */}
+      {/* VÃ­deos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Vídeo 1 (URL)
+            VÃ­deo 1 (URL)
           </label>
           <input
             type="text"
@@ -679,7 +703,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Vídeo 2 (URL)
+            VÃ­deo 2 (URL)
           </label>
           <input
             type="text"
@@ -692,7 +716,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         </div>
       </div>
 
-      {/* Opções */}
+      {/* OpÃ§Ãµes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex items-center gap-2">
           <input
@@ -708,7 +732,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Data de Publicação
+            Data de PublicaÃ§Ã£o
           </label>
           <input
             type="datetime-local"
@@ -720,7 +744,7 @@ export default function PostForm({ mode, post }: PostFormProps) {
         </div>
       </div>
 
-      {/* Botões */}
+      {/* BotÃµes */}
       <div className="flex flex-wrap gap-4 pt-4 border-t border-slate-200">
         <button
           type="submit"
@@ -746,3 +770,5 @@ export default function PostForm({ mode, post }: PostFormProps) {
     </form>
   );
 }
+
+

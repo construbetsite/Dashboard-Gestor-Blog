@@ -35,6 +35,18 @@ import ProductCategoriesList from "./pages/admin/ProductCategoriesList";
 import ProductCategoryFormPage from "./pages/admin/ProductCategoryFormPage";
 
 // ============================================================
+// CATEGORIAS DA LANDING PAGE
+// ============================================================
+
+import LandingCategoriesRoutes from "./modules/landingCategories/LandingCategoriesRoutes";
+
+// ============================================================
+// LEADS
+// ============================================================
+
+import LeadsRoutes from "./modules/leads/LeadsRoutes";
+
+// ============================================================
 // DASHBOARD
 // ============================================================
 
@@ -318,6 +330,29 @@ function App() {
               <Route
                 path="/admin/produtos/categorias/editar/:id"
                 element={<ProductCategoryFormPage />}
+              />
+
+              {/* =================================================
+                  CATEGORIAS DA LANDING PAGE
+                  Módulo próprio com <Routes> interno (lazy).
+                  Structured/router: rota-pai com splat cujo
+                  `element` é o componente do módulo — padrão
+                  válido do React Router para rotas modulares.
+                  ================================================= */}
+
+              <Route
+                path="/dashboard/landing-categories/*"
+                element={<LandingCategoriesRoutes />}
+              />
+
+              {/* =================================================
+                  LEADS
+                  Módulo próprio com <Routes> interno (lazy).
+                  ================================================= */}
+
+              <Route
+                path="/dashboard/leads/*"
+                element={<LeadsRoutes />}
               />
 
               {/* =================================================
