@@ -131,14 +131,25 @@ export default function ProductForm({
   const isPickup = form.commercialType === "PICKUP";
   const isEcommerce = form.commercialType === "ECOMMERCE";
 
-  // Limpa campo irrelevante quando troca o tipo (evita enviar dados conflitantes)
-  useEffect(() => {
-    if (isPickup) {
-      setForm((prev) => ({ ...prev, redirectUrl: "" }));
-    } else if (isEcommerce) {
-      setForm((prev) => ({ ...prev, price: "" }));
-    }
-  }, [form.commercialType, isPickup, isEcommerce]);
+  // Troca manual do tipo comercial pelo usuário.
+  // Limpa o campo do tipo oposto APENAS aqui (no evento), preservando
+  // os valores carregados da API. Não usar useEffect para limpar: ele
+  // roda no mesmo ciclo do carregamento do produto e sobrescreve o
+  // redirectUrl/price recém-populados com string vazia (bug do edit).
+  const handleCommercialTypeChange = (value: CommercialType) => {
+    setForm((prev) => {
+      const next: FormState = {
+        ...prev,
+        commercialType: value,
+      };
+      if (value === "PICKUP") {
+        next.redirectUrl = "";
+      } else if (value === "ECOMMERCE") {
+        next.price = "";
+      }
+      return next;
+    });
+  };
 
   const handleChange = (
     field: keyof FormState,
@@ -385,8 +396,7 @@ export default function ProductForm({
           <select
             value={form.commercialType}
             onChange={(e) =>
-              handleChange(
-                "commercialType",
+              handleCommercialTypeChange(
                 e.target.value as CommercialType
               )
             }
